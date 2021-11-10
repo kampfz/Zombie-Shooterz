@@ -15,6 +15,8 @@ import Combine
 class ViewModel: ObservableObject {
     @Published var distanceToTarget: Float = 0.0
 
+    @Published var showDistance: Bool = true
+    
     let uiSignal = PassthroughSubject<UISignal, Never>()
 
     enum UISignal {
@@ -29,48 +31,62 @@ class ViewModel: ObservableObject {
 struct ContentView : View {
     @StateObject var viewModel: ViewModel
     
+    @State var showTestInterface: Bool = true
+    
     var body: some View {
         ZStack {
             // AR View.
             ARViewContainer(viewModel: viewModel)
-        
-            // Reset button.
-            Button {
-                viewModel.uiSignal.send(.didPressUndo)
-            } label: {
-                Label("Undo", systemImage: "arrow.uturn.backward")
-                    .font(.system(.title))
-                    .foregroundColor(.white)
-                    .labelStyle(IconOnlyLabelStyle())
-                    .frame(width: 44, height: 44)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-            .padding()
-        
-            // Distance value.
-            Text("Distance: \(viewModel.distanceToTarget, specifier: "%.2f")")
-                .font(.system(size: 16).weight(.light))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                .padding(.bottom, 20)
 
-        
-            // Controls.
-            VStack {
-                Button {
-                    viewModel.uiSignal.send(.didPressAddEntityP)
-                } label: {
-                    buttonIcon("p.square", color: .black)
+            // Invisible button in upper right to show/hide test interface.
+            Color.white.opacity(0.0001)
+                .frame(width: 100, height: 100)
+                .onTapGesture(count: 2) {
+                    showTestInterface.toggle()
                 }
-                
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            
+            // Hide/show test interface.
+            if showTestInterface {
+                // Reset button.
                 Button {
-                    viewModel.uiSignal.send(.didPressAddEntityB)
+                    viewModel.uiSignal.send(.didPressUndo)
                 } label: {
-                    buttonIcon("b.square", color: .orange)
+                    Label("Undo", systemImage: "arrow.uturn.backward")
+                        .font(.system(.title))
+                        .foregroundColor(.white)
+                        .labelStyle(IconOnlyLabelStyle())
+                        .frame(width: 44, height: 44)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                .padding()
+
+                // Add entities buttons.
+                VStack {
+                    Button {
+                        viewModel.uiSignal.send(.didPressAddEntityP)
+                    } label: {
+                        buttonIcon("p.square", color: .black)
+                    }
+                    
+                    Button {
+                        viewModel.uiSignal.send(.didPressAddEntityB)
+                    } label: {
+                        buttonIcon("b.square", color: .orange)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 30)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 30)
+
+            // Distance value. Visible if there are entities added to scene.
+            if viewModel.showDistance {
+                Text("Distance: \(viewModel.distanceToTarget, specifier: "%.2f")")
+                    .font(.system(size: 16).weight(.light))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    .padding(.bottom, 20)
+            }
         }
         .edgesIgnoringSafeArea(.all)
         .statusBar(hidden: true)
@@ -182,6 +198,7 @@ class SimpleARView: ARView {
         }
     }
 
+    // Add sample plane entity.
     func addEntityP() {
         // Create plane anchor.
         let planeAnchor = AnchorEntity(plane: [.any])
@@ -198,6 +215,7 @@ class SimpleARView: ARView {
         sceneEntities.append(planeEntity)
     }
 
+    // Add sample box entity.
     func addEntityB() {
         // Create plane anchor.
         let planeAnchor = AnchorEntity(plane: [.any])
@@ -214,7 +232,7 @@ class SimpleARView: ARView {
         sceneEntities.append(boxEntity)
     }
 
-    
+    // Removes last added entity.
     func removeLastEntity() {
         if let entity = lastAddedEntity {
             entity.removeFromParent()
@@ -225,6 +243,9 @@ class SimpleARView: ARView {
     func renderLoop() {
         // Make arrow look at last added entity.
         if let targetEntity = lastAddedEntity {
+            directionArrowEntity.isEnabled = true
+            viewModel.showDistance = true
+            
             let target  =  targetEntity.position(relativeTo: pov)
             let origin  =  directionArrowEntity.position
             directionArrowEntity.look(at: [origin.x + target.x,
@@ -232,15 +253,22 @@ class SimpleARView: ARView {
                                            origin.z + target.z], from: origin, upVector: [0,1,0], relativeTo: pov)
 
             // Get distance to target.
-            viewModel.distanceToTarget = simd_distance(pov.position(relativeTo: originAnchor), targetEntity.position(relativeTo: originAnchor))
+            viewModel.distanceToTarget = simd_distance(pov.position(relativeTo: originAnchor),
+                                                       targetEntity.position(relativeTo: originAnchor))
         } else {
-            
+            // Hide direction arrow if there are no scene entities.
+            directionArrowEntity.isEnabled = false
+            viewModel.showDistance = false
         }
         
+        // Adjust entity positions so they are on top of the plane anchors.
         for entity in sceneEntities {
             entity.position.y = entity.visualBounds(relativeTo: entity.parent).extents.y / 2
         }
     }
+
+
+    // Helper methods for creating example entities.
 
     func makePlaneEntity() -> ModelEntity {
         // Create transparent material.
