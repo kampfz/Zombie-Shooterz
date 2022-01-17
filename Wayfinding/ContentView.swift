@@ -9,20 +9,24 @@ import SwiftUI
 import ARKit
 import RealityKit
 import Combine
+import AVFoundation
 
 
 // MARK: - View model for handling communication between the UI and ARView.
 class ViewModel: ObservableObject {
+    
+    
     @Published var distanceToTarget: Float = 0.0
 
-    @Published var showDistance: Bool = true
+    @Published var massValue: Float = 2.0
+    @Published var forceValue: Float = 4
+    @Published var score: Int = 0
     
     let uiSignal = PassthroughSubject<UISignal, Never>()
 
     enum UISignal {
         case didPressUndo
-        case didPressAddEntityP
-        case didPressAddEntityB
+        case didPressShoot
     }
 }
 
@@ -35,18 +39,43 @@ struct ContentView : View {
     
     var body: some View {
         ZStack {
-            // AR View.
+                     // AR View.
             ARViewContainer(viewModel: viewModel)
-
-            // Invisible button in upper right to show/hide test interface.
-            Color.white.opacity(0.0001)
-                .frame(width: 100, height: 100)
-                .onTapGesture(count: 2) {
-                    showTestInterface.toggle()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             
-            // Hide/show test interface.
+           /* Image("crosshairs.png")
+                .resizable()
+                .padding(10)
+                .frame(width: 44, height: 44)*/
+                            
+                
+                Color.white.opacity(0.0001)
+                    .frame(width: 100, height: 100)
+                    .onTapGesture(count: 2) {
+                        showTestInterface.toggle()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            
+           
+            
+            
+            
+            
+            
+            
+                
+                
+            Image("crosshairs")
+                .resizable()
+                .padding(10)
+                .frame(width: 150, height: 150)
+                
+                Spacer()
+                Spacer()
+                Spacer()
+                
+            
+                
+            
             if showTestInterface {
                 // Reset button.
                 Button {
@@ -61,32 +90,66 @@ struct ContentView : View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                 .padding()
 
-                // Add entities buttons.
-                VStack {
-                    Button {
-                        viewModel.uiSignal.send(.didPressAddEntityP)
-                    } label: {
-                        buttonIcon("p.square", color: .black)
-                    }
-                    
-                    Button {
-                        viewModel.uiSignal.send(.didPressAddEntityB)
-                    } label: {
-                        buttonIcon("b.square", color: .orange)
-                    }
+               
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 30)
+            
+            // Add entities buttons.
+            VStack {
+                Spacer()
+                Spacer()
+                Spacer()
+                HStack{
+                    /*
+                    Slider(value: $viewModel.massValue, in: 0...10)
+                            .frame(width: 120, alignment: .center)
+                        .rotationEffect(.radians(-.pi/2))
+                    
+                    Slider(value: $viewModel.forceValue, in: 0...25)
+                        .frame(width: 120, alignment: .center)
+                        .rotationEffect(.radians(-.pi/2))
+                    */
+                        //Spacer()
+                    Spacer()
+                //Spacer()
+               
+                
+                Button {
+                    viewModel.uiSignal.send(.didPressShoot)
+                } label: {
+                    Text("Shoot")
+                        .frame(maxWidth: 100, maxHeight: 100)
+                        
+                }
+                    
+            
+            
+            
+            .background(.red)
+            .foregroundColor(.white)
+            .cornerRadius(20)
+            }
+            
+            // Hide/show test interface.
+            
+              Spacer()
+                HStack{
+                    Spacer()
+             Text("Score: \(viewModel.score)")
+                        .font(.system(.title))
+                        .foregroundColor(.white)
+                        
+                    Spacer()
+                    Spacer()
+                    Spacer()
+                    Spacer()
+                    Spacer()
+                    Spacer()
+            }
+                
             }
 
             // Distance value. Visible if there are entities added to scene.
-            if viewModel.showDistance {
-                Text("Distance: \(viewModel.distanceToTarget, specifier: "%.2f")")
-                    .font(.system(size: 16).weight(.light))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                    .padding(.bottom, 20)
-            }
+            
         }
         .edgesIgnoringSafeArea(.all)
         .statusBar(hidden: true)
@@ -116,16 +179,22 @@ struct ARViewContainer: UIViewRepresentable {
     func updateUIView(_ uiView: ARView, context: Context) {}
 }
 
-class SimpleARView: ARView {
+class SimpleARView: ARView, ARSessionDelegate {
     var viewModel: ViewModel
     var arView: ARView { return self }
     var originAnchor: AnchorEntity!
     var pov: AnchorEntity!
     var subscriptions = Set<AnyCancellable>()
+    var cursor: Entity!
+    var imageAnchorToEntity: [ARImageAnchor: AnchorEntity] = [:]
+    var ambientIntensity: Double = 0
+    
+    var bullet: ModelEntity!
 
     var directionArrowEntity: ModelEntity!
     
     var sceneEntities = [ModelEntity]()
+    var player: AVAudioPlayer!
     
     var lastAddedEntity: ModelEntity? {
         sceneEntities.last
@@ -157,21 +226,64 @@ class SimpleARView: ARView {
         // Create an anchor at scene origin.
         originAnchor = AnchorEntity(world: .zero)
         arView.scene.addAnchor(originAnchor)
+        
+        cursor = Entity()
+        originAnchor.addChild(cursor)
+        
+      
 
         // Add pov entity that follows the camera.
         pov = AnchorEntity(.camera)
         arView.scene.addAnchor(pov)
 
-        // Setup world tracking and plane detection.
         let configuration = ARWorldTrackingConfiguration()
-        configuration.planeDetection = [.horizontal, .vertical]
-        configuration.environmentTexturing = .automatic
-        arView.renderOptions = [.disableDepthOfField, .disableMotionBlur]
-        arView.session.run(configuration)
+        configuration.planeDetection = []
+        var set = Set<ARReferenceImage>()
         
+        if let detectionImage = makeDetectionImage(named: "zombie1.png",
+                                                   referenceName: "IMAGE_ALPHA",
+                                                   physicalWidth: 0.2159) {
+            set.insert(detectionImage)
+        }
+        
+        configuration.detectionImages = set
+        configuration.maximumNumberOfTrackedImages = 2
+        
+       
+//
+        arView.renderOptions = [ .disableMotionBlur, .disableCameraGrain, .disableDepthOfField, .disableGroundingShadows, .disableAREnvironmentLighting ]
+        configuration.environmentTexturing = .none
+        
+        
+                if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
+                    configuration.sceneReconstruction = .mesh
+//                    configuration.frameSemantics.insert(.personSegmentationWithDepth)
+                } else {
+                    print("ARWorldTrackingConfiguration: Does not support scene Reconstruction.")
+                }
+        
+        // TODO: Update target image and physical width in meters. //////////////////////////////////////
+        let targetImage    = "zombie1"
+        let physicalWidth  = 0.1524
+        
+        if let refImage = UIImage(named: targetImage)?.cgImage {
+            print(">>>>>>>>")
+            let arReferenceImage = ARReferenceImage(refImage, orientation: .up, physicalWidth: physicalWidth)
+            var set = Set<ARReferenceImage>()
+            set.insert(arReferenceImage)
+            configuration.detectionImages = set
+        } else {
+            print("❗️ Error loading target image")
+        }
+
+               
+        arView.environment.sceneUnderstanding.options = [.collision, .physics]
+        
+        arView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
         // Called every frame.
         scene.subscribe(to: SceneEvents.Update.self) { event in
-            self.renderLoop()
+//            self.renderLoop()
+//            self.updateCursor()
         }.store(in: &subscriptions)
         
         // Process UI signals.
@@ -179,135 +291,183 @@ class SimpleARView: ARView {
             self?.processUISignal($0)
         }.store(in: &subscriptions)
         
-        // Create direction arrow and to POV.
-        directionArrowEntity = makeArrowEntity()
-        directionArrowEntity.position.y = -0.25
-        directionArrowEntity.position.z = -0.5
-        pov.addChild(directionArrowEntity)
+        arView.scene.subscribe(to: CollisionEvents.Began.self) { event in
+            // If entity with name block collides with anything.
+            if event.entityA.name == "target"  {
+                self.viewModel.score += 1
+                print("HIT TARGET")
+            }
+            
+            if event.entityA.name == "bullet" || event.entityB.name == "bullet" {
+               
+                print("BULLET HIT SOMETHING")
+            }
+
+            
+        }.store(in: &subscriptions)
+        
+        bullet = makeBullet()
+        
+        
+       
+        
+        
+
+        
+        
+        arView.session.delegate = self
+         
+        
+    }
+    
+    func makeDetectionImage(named: String, referenceName: String, physicalWidth: CGFloat) -> ARReferenceImage? {
+        guard let targetImage = UIImage(named: named)?.cgImage else {
+            print("❗️ Error loading target image:", named)
+            return nil
+        }
+
+        let arReferenceImage  = ARReferenceImage(targetImage, orientation: .up, physicalWidth: physicalWidth)
+        arReferenceImage.name = referenceName
+
+        return arReferenceImage
+    }
+    
+    
+    /*
+    func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+        // Handle image anchors.
+        anchors.compactMap { $0 as? ARImageAnchor }.forEach {
+            // Grab reference image name.
+            guard let referenceImageName = $0.referenceImage.name else { return }
+
+            // Create anchor and place at image location.
+            let anchorEntity = AnchorEntity(world: $0.transform)
+            arView.scene.addAnchor(anchorEntity)
+            
+            // Setup logic based on reference image.
+            if referenceImageName == "IMAGE_ALPHA" {
+                setupEntities(anchorEntity: anchorEntity)
+        }
+    }
+    }*/
+    
+    func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+        anchors.compactMap { $0 as? ARImageAnchor }.forEach {
+            // Create anchor from image.
+            let anchorEntity = AnchorEntity(anchor: $0)
+            
+            // Track image anchors added to scene.
+            imageAnchorToEntity[$0] = anchorEntity
+            
+            // Add anchor to scene.
+            arView.scene.addAnchor(anchorEntity)
+            
+            // Call setup method for entities.
+            // IMPORTANT: Play USDZ animations after entity is added to the scene.
+            setupEntities(anchorEntity: anchorEntity)
+        }
+    }
+    
+   
+    
+    
+    func setupEntities(anchorEntity: AnchorEntity) {
+        print("it works!")
+        
+        let boxMesh   = MeshResource.generateBox(width: 0.2, height: 0.025, depth: 0.2, cornerRadius: 0.002)
+        let material  = OcclusionMaterial()
+        
+        let marker = ModelEntity(mesh: boxMesh, materials: [material])
+        
+        marker.collision = CollisionComponent(shapes: [.generateBox(width: 0.28, height: 0.025, depth: 0.3)])
+        marker.physicsBody = PhysicsBodyComponent(shapes: [.generateBox(width: 0.28, height: 0.025, depth: 0.3)], mass: 1)
+        marker.physicsBody?.mode = .static
+        marker.name = "target"
+        
+        anchorEntity.addChild(marker)
+        //marker.position.y = 0.1
+        
+        print("yup def working")
     }
 
+    
+    
     // Process UI signals.
     func processUISignal(_ signal: ViewModel.UISignal) {
         switch signal {
         case .didPressUndo:
-            removeLastEntity()
-        case .didPressAddEntityP:
-            addEntityP()
-        case .didPressAddEntityB:
-            addEntityB()
+            arView.scene.anchors.removeAll()
+            sceneEntities.removeAll()
+            
+            originAnchor = AnchorEntity(world: .zero)
+            arView.scene.addAnchor(originAnchor)
+            
+            pov = AnchorEntity(.camera)
+            arView.scene.addAnchor(pov)
+        
+        case .didPressShoot:
+            addBullet()
+            playSound()
+            
         }
     }
-
-    // Add sample plane entity.
-    func addEntityP() {
-        // Create plane anchor.
-        let planeAnchor = AnchorEntity(plane: [.any])
-        arView.scene.addAnchor(planeAnchor)
-
-        // Create plane entity and add to anchor.
-        let planeEntity = makePlaneEntity()
-        planeAnchor.addChild(planeEntity)
-
-        // Add gestures.
-        arView.installGestures([.translation, .rotation, .scale], for: planeEntity)
-
-        // Append to array for reference.
-        sceneEntities.append(planeEntity)
-    }
+    
 
     // Add sample box entity.
-    func addEntityB() {
+    func playSound() {
+           let url = Bundle.main.url(forResource: "swoosh", withExtension: "wav")
+           player = try! AVAudioPlayer(contentsOf: url!)
+           player.play()
+        }
+    
+    func addBullet() {
         // Create plane anchor.
         let planeAnchor = AnchorEntity(plane: [.any])
         arView.scene.addAnchor(planeAnchor)
 
-        // Create box entity and add to anchor.
-        let boxEntity = makeBoxEntity()
-        planeAnchor.addChild(boxEntity)
-
-        // Add gestures.
-        arView.installGestures([.translation, .rotation, .scale], for: boxEntity)
-
+        // Create and shoot new bullet
+        let bulletEntity = bullet.clone(recursive: false)
+        bulletEntity.position = pov.position(relativeTo: originAnchor)
+        bulletEntity.orientation = pov.orientation(relativeTo: originAnchor)
+        bulletEntity.setScale([2,2,2], relativeTo: originAnchor)
+        originAnchor.addChild(bulletEntity)
+        bulletEntity.applyLinearImpulse([0, 0.6, -viewModel.forceValue], relativeTo: bulletEntity)
+        
+        
         // Append to array for reference.
-        sceneEntities.append(boxEntity)
+        sceneEntities.append(bulletEntity)
     }
 
-    // Removes last added entity.
-    func removeLastEntity() {
-        if let entity = lastAddedEntity {
-            entity.removeFromParent()
-            sceneEntities.removeLast()
-        }
-    }
+    
 
     func renderLoop() {
-        // Make arrow look at last added entity.
-        if let targetEntity = lastAddedEntity {
-            directionArrowEntity.isEnabled = true
-            viewModel.showDistance = true
-            
-            let target  =  targetEntity.position(relativeTo: pov)
-            let origin  =  directionArrowEntity.position
-            directionArrowEntity.look(at: [origin.x + target.x,
-                                           origin.y + target.y,
-                                           origin.z + target.z], from: origin, upVector: [0,1,0], relativeTo: pov)
-
-            // Get distance to target.
-            viewModel.distanceToTarget = simd_distance(pov.position(relativeTo: originAnchor),
-                                                       targetEntity.position(relativeTo: originAnchor))
-        } else {
-            // Hide direction arrow if there are no scene entities.
-            directionArrowEntity.isEnabled = false
-            viewModel.showDistance = false
-        }
         
-        // Adjust entity positions so they are on top of the plane anchors.
-        for entity in sceneEntities {
-            entity.position.y = entity.visualBounds(relativeTo: entity.parent).extents.y / 2
-        }
     }
 
+    
 
-    // Helper methods for creating example entities.
-
-    func makePlaneEntity() -> ModelEntity {
-        // Create transparent material.
-        var material = UnlitMaterial()
-        let texture = try! TextureResource.load(named: "arrow.png")
-        material.color.texture = .init(texture)
-        material.color.tint    = .white.withAlphaComponent(0.999)
-
-        let entity = ModelEntity.init(mesh: .generatePlane(width: 0.5, depth: 0.5), materials: [material])
-
-        entity.generateCollisionShapes(recursive: true)
-        
-        return entity
-    }
-
-    func makeBoxEntity() -> ModelEntity {
+    func makeBullet() -> ModelEntity {
         var material = PhysicallyBasedMaterial()
-        material.baseColor.tint = .orange
+        material.baseColor.tint = .blue
 
-        let entity = ModelEntity.init(mesh: .generateBox(size: 0.25, cornerRadius: 0.02),
-                                      materials: [material])
 
-        entity.generateCollisionShapes(recursive: true)
+        let entity = try! Entity.loadModel(named: "sphere.usdz")
+        
+        entity.collision = CollisionComponent(shapes: [.generateSphere(radius: 0.11)])
+        entity.physicsBody = PhysicsBodyComponent(shapes: [.generateSphere(radius: 0.11)], mass: viewModel.massValue)
+        entity.model?.materials = [material]
+        entity.name = "bullet"
+                
+        entity.physicsBody?.mode = .dynamic
         
         return entity
     }
-
-    func makeArrowEntity() -> ModelEntity {
-        var greenMaterial = PhysicallyBasedMaterial()
-        greenMaterial.baseColor.tint = .green
-
-        var redMaterial = PhysicallyBasedMaterial()
-        redMaterial.baseColor.tint = .red
-
-        let body = ModelEntity.init(mesh: .generateBox(size: [0.015, 0.015, 0.1]), materials: [greenMaterial])
-        let back  = ModelEntity.init(mesh: .generateBox(size: [0.016, 0.016, 0.016]), materials: [redMaterial])
-        back.position.z = -0.1 / 2
-        body.addChild(back)
-        
-        return body
+    
+    func makeBoxMarker(color: UIColor) -> Entity {
+        let boxMesh   = MeshResource.generateBox(size: 0.025, cornerRadius: 0.002)
+        let material  = SimpleMaterial(color: color, isMetallic: false)
+        return ModelEntity(mesh: boxMesh, materials: [material])
     }
+
+   
 }
