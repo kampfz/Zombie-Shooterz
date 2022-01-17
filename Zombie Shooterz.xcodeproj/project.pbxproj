@@ -105,9 +105,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		6A194BE0273C062A00D56C68 /* Wayfinding */ = {
+		6A194BE0273C062A00D56C68 /* Zombie Shooterz */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 6A194BF1273C062C00D56C68 /* Build configuration list for PBXNativeTarget "Wayfinding" */;
+			buildConfigurationList = 6A194BF1273C062C00D56C68 /* Build configuration list for PBXNativeTarget "Zombie Shooterz" */;
 			buildPhases = (
 				6A194BDD273C062A00D56C68 /* Sources */,
 				6A194BDE273C062A00D56C68 /* Frameworks */,
@@ -117,7 +117,7 @@
 			);
 			dependencies = (
 			);
-			name = Wayfinding;
+			name = "Zombie Shooterz";
 			productName = Wayfinding;
 			productReference = 6A194BE1273C062A00D56C68 /* Zombie Shooterz.app */;
 			productType = "com.apple.product-type.application";
@@ -137,7 +137,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 6A194BDC273C062A00D56C68 /* Build configuration list for PBXProject "Wayfinding" */;
+			buildConfigurationList = 6A194BDC273C062A00D56C68 /* Build configuration list for PBXProject "Zombie Shooterz" */;
 			compatibilityVersion = "Xcode 13.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -150,7 +150,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				6A194BE0273C062A00D56C68 /* Wayfinding */,
+				6A194BE0273C062A00D56C68 /* Zombie Shooterz */,
 			);
 		};
 /* End PBXProject section */
@@ -370,7 +370,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		6A194BDC273C062A00D56C68 /* Build configuration list for PBXProject "Wayfinding" */ = {
+		6A194BDC273C062A00D56C68 /* Build configuration list for PBXProject "Zombie Shooterz" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6A194BEF273C062C00D56C68 /* Debug */,
@@ -379,7 +379,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		6A194BF1273C062C00D56C68 /* Build configuration list for PBXNativeTarget "Wayfinding" */ = {
+		6A194BF1273C062C00D56C68 /* Build configuration list for PBXNativeTarget "Zombie Shooterz" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6A194BF2273C062C00D56C68 /* Debug */,
