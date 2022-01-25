@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>982550401105-usblfoqnmsm1o9vohp1u4g55kdl2emet.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.982550401105-usblfoqnmsm1o9vohp1u4g55kdl2emet</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDjhqSXsfxBE36MYz0LDq861Kr8szWXcw0</string>
+	<key>GCM_SENDER_ID</key>
+	<string>982550401105</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.kampfz.ZombieShooterz</string>
+	<key>PROJECT_ID</key>
+	<string>zombie-shooterz2</string>
+	<key>STORAGE_BUCKET</key>
+	<string>zombie-shooterz2.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:982550401105:ios:a4329e197dc51160f7a870</string>
+</dict>
+</plist>

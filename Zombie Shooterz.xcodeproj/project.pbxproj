@@ -12,6 +12,13 @@
 		6A194BEB273C062C00D56C68 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6A194BEA273C062C00D56C68 /* Assets.xcassets */; };
 		6A194BEE273C062C00D56C68 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6A194BED273C062C00D56C68 /* Preview Assets.xcassets */; };
 		6A194BFF273C0E1A00D56C68 /* arrow.png in Resources */ = {isa = PBXBuildFile; fileRef = 6A194BFE273C0E1A00D56C68 /* arrow.png */; };
+		D91E96DE279CA6BF00ACC6C2 /* OSCKit in Frameworks */ = {isa = PBXBuildFile; productRef = D91E96DD279CA6BF00ACC6C2 /* OSCKit */; };
+		D923FEC0279BACC900A4B860 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D923FEBF279BACC900A4B860 /* GoogleService-Info.plist */; };
+		D923FECA279BB90400A4B860 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = D923FEC9279BB90400A4B860 /* FirebaseAnalytics */; };
+		D923FECC279BB90400A4B860 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = D923FECB279BB90400A4B860 /* FirebaseDatabase */; };
+		D923FED9279C9F4F00A4B860 /* UDPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D923FED8279C9F4F00A4B860 /* UDPClient.swift */; };
+		D923FEDB279C9F7200A4B860 /* UDPServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D923FEDA279C9F7200A4B860 /* UDPServer.swift */; };
+		D97F6F3D2795FE360088AFAF /* cannon.wav in Resources */ = {isa = PBXBuildFile; fileRef = D97F6F3C2795FE360088AFAF /* cannon.wav */; };
 		D9A9E637279560E3002CBDD9 /* target1.png in Resources */ = {isa = PBXBuildFile; fileRef = D9A9E631279560E3002CBDD9 /* target1.png */; };
 		D9A9E638279560E3002CBDD9 /* zombie1.png in Resources */ = {isa = PBXBuildFile; fileRef = D9A9E632279560E3002CBDD9 /* zombie1.png */; };
 		D9A9E639279560E3002CBDD9 /* crosshairs.png in Resources */ = {isa = PBXBuildFile; fileRef = D9A9E633279560E3002CBDD9 /* crosshairs.png */; };
@@ -29,6 +36,10 @@
 		6A194BEA273C062C00D56C68 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6A194BED273C062C00D56C68 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		6A194BFE273C0E1A00D56C68 /* arrow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = arrow.png; sourceTree = "<group>"; };
+		D923FEBF279BACC900A4B860 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		D923FED8279C9F4F00A4B860 /* UDPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UDPClient.swift; sourceTree = "<group>"; };
+		D923FEDA279C9F7200A4B860 /* UDPServer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UDPServer.swift; sourceTree = "<group>"; };
+		D97F6F3C2795FE360088AFAF /* cannon.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = cannon.wav; sourceTree = "<group>"; };
 		D9A9E631279560E3002CBDD9 /* target1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = target1.png; sourceTree = "<group>"; };
 		D9A9E632279560E3002CBDD9 /* zombie1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = zombie1.png; sourceTree = "<group>"; };
 		D9A9E633279560E3002CBDD9 /* crosshairs.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = crosshairs.png; sourceTree = "<group>"; };
@@ -44,6 +55,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D923FECC279BB90400A4B860 /* FirebaseDatabase in Frameworks */,
+				D91E96DE279CA6BF00ACC6C2 /* OSCKit in Frameworks */,
+				D923FECA279BB90400A4B860 /* FirebaseAnalytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -70,10 +84,14 @@
 			isa = PBXGroup;
 			children = (
 				D9A9E6432795617C002CBDD9 /* sphere.usdz */,
+				D97F6F3C2795FE360088AFAF /* cannon.wav */,
+				D923FEDA279C9F7200A4B860 /* UDPServer.swift */,
+				D923FED8279C9F4F00A4B860 /* UDPClient.swift */,
 				6A194BE4273C062A00D56C68 /* AppDelegate.swift */,
 				6A194BE6273C062A00D56C68 /* ContentView.swift */,
 				D9A9E645279561FB002CBDD9 /* swoosh.wav */,
 				6A194BEA273C062C00D56C68 /* Assets.xcassets */,
+				D923FEBF279BACC900A4B860 /* GoogleService-Info.plist */,
 				6A194BF7273C0A2200D56C68 /* Images */,
 				6A194BEC273C062C00D56C68 /* Preview Content */,
 			);
@@ -118,6 +136,11 @@
 			dependencies = (
 			);
 			name = "Zombie Shooterz";
+			packageProductDependencies = (
+				D923FEC9279BB90400A4B860 /* FirebaseAnalytics */,
+				D923FECB279BB90400A4B860 /* FirebaseDatabase */,
+				D91E96DD279CA6BF00ACC6C2 /* OSCKit */,
+			);
 			productName = Wayfinding;
 			productReference = 6A194BE1273C062A00D56C68 /* Zombie Shooterz.app */;
 			productType = "com.apple.product-type.application";
@@ -146,6 +169,10 @@
 				Base,
 			);
 			mainGroup = 6A194BD8273C062A00D56C68;
+			packageReferences = (
+				D923FEC8279BB90400A4B860 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				D91E96DC279CA6BF00ACC6C2 /* XCRemoteSwiftPackageReference "OSCKit" */,
+			);
 			productRefGroup = 6A194BE2273C062A00D56C68 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -166,10 +193,12 @@
 				D9A9E637279560E3002CBDD9 /* target1.png in Resources */,
 				D9A9E63C279560E3002CBDD9 /* zombie3.png in Resources */,
 				6A194BFF273C0E1A00D56C68 /* arrow.png in Resources */,
+				D97F6F3D2795FE360088AFAF /* cannon.wav in Resources */,
 				D9A9E6442795617C002CBDD9 /* sphere.usdz in Resources */,
 				D9A9E646279561FB002CBDD9 /* swoosh.wav in Resources */,
 				D9A9E63A279560E3002CBDD9 /* zombie-icon.jpg in Resources */,
 				D9A9E63B279560E3002CBDD9 /* zombie2.png in Resources */,
+				D923FEC0279BACC900A4B860 /* GoogleService-Info.plist in Resources */,
 				D9A9E638279560E3002CBDD9 /* zombie1.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -181,6 +210,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D923FED9279C9F4F00A4B860 /* UDPClient.swift in Sources */,
+				D923FEDB279C9F7200A4B860 /* UDPServer.swift in Sources */,
 				6A194BE7273C062A00D56C68 /* ContentView.swift in Sources */,
 				6A194BE5273C062A00D56C68 /* AppDelegate.swift in Sources */,
 			);
@@ -240,7 +271,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -295,7 +326,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -344,7 +375,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Wayfinding/Preview Content\"";
-				DEVELOPMENT_TEAM = HY8AUX8L27;
+				DEVELOPMENT_TEAM = U7W459ACYH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "";
@@ -389,6 +420,43 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		D91E96DC279CA6BF00ACC6C2 /* XCRemoteSwiftPackageReference "OSCKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/orchetect/OSCKit";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+		D923FEC8279BB90400A4B860 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D91E96DD279CA6BF00ACC6C2 /* OSCKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D91E96DC279CA6BF00ACC6C2 /* XCRemoteSwiftPackageReference "OSCKit" */;
+			productName = OSCKit;
+		};
+		D923FEC9279BB90400A4B860 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D923FEC8279BB90400A4B860 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		D923FECB279BB90400A4B860 /* FirebaseDatabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D923FEC8279BB90400A4B860 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseDatabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 6A194BD9273C062A00D56C68 /* Project object */;
 }

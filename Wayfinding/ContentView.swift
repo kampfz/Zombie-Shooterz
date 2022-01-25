@@ -10,9 +10,13 @@ import ARKit
 import RealityKit
 import Combine
 import AVFoundation
+import Firebase
+import OSCKit
 
 
 // MARK: - View model for handling communication between the UI and ARView.
+
+
 class ViewModel: ObservableObject {
     
     
@@ -20,7 +24,8 @@ class ViewModel: ObservableObject {
 
     @Published var massValue: Float = 2.0
     @Published var forceValue: Float = 4
-    @Published var score: Int = 0
+    @Published var score: Int32? = 0
+    @Published var score2: Int32? = 0
     
     let uiSignal = PassthroughSubject<UISignal, Never>()
 
@@ -99,7 +104,7 @@ struct ContentView : View {
                 Spacer()
                 Spacer()
                 HStack{
-                    /*
+                    
                     Slider(value: $viewModel.massValue, in: 0...10)
                             .frame(width: 120, alignment: .center)
                         .rotationEffect(.radians(-.pi/2))
@@ -107,7 +112,7 @@ struct ContentView : View {
                     Slider(value: $viewModel.forceValue, in: 0...25)
                         .frame(width: 120, alignment: .center)
                         .rotationEffect(.radians(-.pi/2))
-                    */
+                    
                         //Spacer()
                     Spacer()
                 //Spacer()
@@ -134,7 +139,7 @@ struct ContentView : View {
               Spacer()
                 HStack{
                     Spacer()
-             Text("Score: \(viewModel.score)")
+             Text("Score: \(viewModel.score2!)")
                         .font(.system(.title))
                         .foregroundColor(.white)
                         
@@ -189,12 +194,23 @@ class SimpleARView: ARView, ARSessionDelegate {
     var imageAnchorToEntity: [ARImageAnchor: AnchorEntity] = [:]
     var ambientIntensity: Double = 0
     
+    
     var bullet: ModelEntity!
 
     var directionArrowEntity: ModelEntity!
     
     var sceneEntities = [ModelEntity]()
     var player: AVAudioPlayer!
+    var bulletSoundEntity = Entity()
+    var bulletEntity: ModelEntity!
+    var bulletController: AudioPlaybackController!
+    var timer:Timer!
+    var timer2:Timer!
+    
+    var controllerClient: UDPClient?
+    var controllerServer: UDPServer?
+    
+    
     
     var lastAddedEntity: ModelEntity? {
         sceneEntities.last
@@ -220,6 +236,79 @@ class SimpleARView: ARView, ARSessionDelegate {
         UIApplication.shared.isIdleTimerDisabled = true
         
         setupScene()
+        FirebaseApp.configure()
+        
+        let controllerHost = String("10.23.11.154")
+        let controllerPort = UInt16 (8080)
+        
+       
+        
+       
+        controllerClient = UDPClient(
+            host: controllerHost,
+            port: controllerPort,
+            queue: DispatchQueue.global(qos: .userInteractive)
+        )
+        
+        print("UDP client set up.")
+        
+        do {
+            controllerServer = try UDPServer(
+                host: "localhost",
+                port: 8000,
+                queue: DispatchQueue.global(qos: .userInteractive)
+            )
+        } catch {
+            print("Error initializing UDP server:", error)
+            return
+        }
+        
+        controllerServer?.setHandler { [weak self] data in
+            
+            // incoming data handler is fired on the UDPServer's queue
+            // but we want to deal with it on the main thread
+            // to update UI as a result, etc. here
+            
+            DispatchQueue.main.async {
+                
+                do {
+                    guard let oscPayload = try data.parseOSC() else { return }
+                    self?.handleOSCPayload(oscPayload)
+                    
+                } catch let error as OSCBundle.DecodeError {
+                    // handle bundle errors
+                    switch error {
+                    case .malformed(let verboseError):
+                        print("Error:", verboseError)
+                    }
+                    
+                } catch let error as OSCMessage.DecodeError {
+                    // handle message errors
+                    switch error {
+                    case .malformed(let verboseError):
+                        print("Error:", verboseError)
+                        
+                    case .unexpectedType(let oscType):
+                        print("Error: unexpected OSC type tag:", oscType)
+                        
+                    }
+                    
+                } catch {
+                    // handle other errors
+                    print("Error:", error)
+                }
+                
+            }
+            
+        }
+        
+        print("UDP server set up.")
+
+        
+        
+           
+            
+        
     }
         
     func setupScene() {
@@ -262,6 +351,8 @@ class SimpleARView: ARView, ARSessionDelegate {
                     print("ARWorldTrackingConfiguration: Does not support scene Reconstruction.")
                 }
         
+        arView.debugOptions = [.showSceneUnderstanding, .showStatistics]
+        
         // TODO: Update target image and physical width in meters. //////////////////////////////////////
         let targetImage    = "zombie1"
         let physicalWidth  = 0.1524
@@ -294,12 +385,13 @@ class SimpleARView: ARView, ARSessionDelegate {
         arView.scene.subscribe(to: CollisionEvents.Began.self) { event in
             // If entity with name block collides with anything.
             if event.entityA.name == "target"  {
-                self.viewModel.score += 1
+                self.viewModel.score! += 1
+                
                 print("HIT TARGET")
             }
             
             if event.entityA.name == "bullet" || event.entityB.name == "bullet" {
-               
+                //self.viewModel.score! += 1
                 print("BULLET HIT SOMETHING")
             }
 
@@ -308,9 +400,21 @@ class SimpleARView: ARView, ARSessionDelegate {
         
         bullet = makeBullet()
         
-        
+        timer = Timer.scheduledTimer(
+            timeInterval: 0.1,
+            target: self,
+            selector: #selector(checkTime),
+            userInfo: nil,
+            repeats: true
+            )
        
-        
+        timer2 = Timer.scheduledTimer(
+            timeInterval: 4,
+            target: self,
+            selector: #selector(checkTime2),
+            userInfo: nil,
+            repeats: true
+        )
         
 
         
@@ -407,7 +511,11 @@ class SimpleARView: ARView, ARSessionDelegate {
         
         case .didPressShoot:
             addBullet()
+            self.viewModel.score! += 1
             playSound()
+            
+            sendScore(controllerClient!)
+            //sendScore2(controllerClient!)
             
         }
     }
@@ -421,25 +529,63 @@ class SimpleARView: ARView, ARSessionDelegate {
         }
     
     func addBullet() {
+        
+        
         // Create plane anchor.
         let planeAnchor = AnchorEntity(plane: [.any])
         arView.scene.addAnchor(planeAnchor)
 
         // Create and shoot new bullet
-        let bulletEntity = bullet.clone(recursive: false)
+        bulletEntity = bullet.clone(recursive: false)
+        
         bulletEntity.position = pov.position(relativeTo: originAnchor)
         bulletEntity.orientation = pov.orientation(relativeTo: originAnchor)
         bulletEntity.setScale([2,2,2], relativeTo: originAnchor)
+        
         originAnchor.addChild(bulletEntity)
+        
         bulletEntity.applyLinearImpulse([0, 0.6, -viewModel.forceValue], relativeTo: bulletEntity)
+        bulletEntity.addChild(bulletSoundEntity)
         
         
         // Append to array for reference.
         sceneEntities.append(bulletEntity)
-    }
+        //bulletController.play()
+        
 
+       /* timer = Timer.scheduledTimer(
+            timeInterval: 0.63,
+            target: self,
+            selector: #selector(checkTime),
+            userInfo: nil,
+            repeats: false
+        )*/
+        
+        
+
+        
+    
+    }
+    
     
 
+    @objc func checkTime() {
+        
+            
+    }
+    
+    @objc func checkTime2() {
+        
+        arView.scene.anchors.removeAll()
+        sceneEntities.removeAll()
+        
+        originAnchor = AnchorEntity(world: .zero)
+        arView.scene.addAnchor(originAnchor)
+        
+        pov = AnchorEntity(.camera)
+        arView.scene.addAnchor(pov)
+        
+    }
     func renderLoop() {
         
     }
@@ -447,6 +593,14 @@ class SimpleARView: ARView, ARSessionDelegate {
     
 
     func makeBullet() -> ModelEntity {
+        do{
+            let bulletResource = try AudioFileResource.load(named: "swoosh.wav", in: nil, inputMode: .spatial, loadingStrategy: .preload, shouldLoop: true)
+            bulletController = bulletSoundEntity.prepareAudio(bulletResource)
+            print("Loading bullet sound")
+        }catch {
+            print("Error loading audio files")
+        }
+        
         var material = PhysicallyBasedMaterial()
         material.baseColor.tint = .blue
 
@@ -457,6 +611,7 @@ class SimpleARView: ARView, ARSessionDelegate {
         entity.physicsBody = PhysicsBodyComponent(shapes: [.generateSphere(radius: 0.11)], mass: viewModel.massValue)
         entity.model?.materials = [material]
         entity.name = "bullet"
+        
                 
         entity.physicsBody?.mode = .dynamic
         
@@ -469,5 +624,59 @@ class SimpleARView: ARView, ARSessionDelegate {
         return ModelEntity(mesh: boxMesh, materials: [material])
     }
 
+
+    
+    
    
+    
+    func handleOSCPayload(_ oscPayload: OSCPayload) {
+        
+        switch oscPayload {
+        case .bundle(let bundle):
+            // recursively handle nested bundles and messages
+            bundle.elements.forEach { handleOSCPayload($0) }
+            
+        case .message(let message):
+            // handle message
+            if message.address == "/scoreB"{
+                print(message)
+                let oscMessage = message.values.first!
+               print(oscMessage)
+                //let test = Int32(String("\(oscMessage)"))
+                //print(test!)
+                
+                viewModel.score2 = Int32(String("\(oscMessage)"))
+               // print(viewModel.score2!)
+            }
+                
+        }
+        
+        
+    }
+    
+   
+    func sendScore(_ sender: Any) {
+        
+        let score = OSCMessage(
+            address: "/scoreA",
+            values: [.int32(viewModel.score!)]
+        )
+            .rawData
+        
+        controllerClient?.send(data: score)
+        
+    }
+    
+    func sendScore2(_ sender: Any) {
+        
+        let score = OSCMessage(
+            address: "/scoreB",
+            values: [.int32(viewModel.score2!)]
+        )
+            .rawData
+        
+        controllerClient?.send(data: score)
+        
+    }
+
 }
